@@ -5,9 +5,9 @@
 package string
 
 import (
-	"fmt"
-	"runtime"
 	"sync"
+
+	"github.com/itsmontoya/pubsubby/utilities"
 )
 
 // u will return a new instance of pubsubby
@@ -105,12 +105,12 @@ func (p *pubsub) Len() (n int) {
 }
 
 // List is for debugging purposes, will allow to peek at the current subscibers
-func (p *pubsub) List() (fis []FuncInfo) {
+func (p *pubsub) List() (fis []utilities.FuncInfo) {
 	p.mux.RLock()
 	defer p.mux.RUnlock()
 
 	for _, fn := range p.fns {
-		fis = append(fis, NewFuncInfo(fn))
+		fis = append(fis, utilities.NewFuncInfo(fn))
 	}
 
 	return
@@ -118,22 +118,3 @@ func (p *pubsub) List() (fis []FuncInfo) {
 
 // SubFn will take a value and return an "end" boolean
 type SubFn func(val string) (end bool)
-
-// NewFuncInfo will return function information
-func NewFuncInfo(fn SubFn) (fi FuncInfo) {
-	rt := runtime.FuncForPC(reflect.stringOf(fn).Pointer())
-	fi.File, fi.Line = rt.FileLine(rt.Entry())
-	fi.Name = rt.Name()
-	return
-}
-
-// FuncInfo contains basic func info
-type FuncInfo struct {
-	Name string `json:"name"`
-	File string `json:"file"`
-	Line int    `json:"line"`
-}
-
-func (fi *FuncInfo) String() string {
-	return fmt.Sprintf("%s %s (%d)", fi.Name, fi.File, fi.Line)
-}
