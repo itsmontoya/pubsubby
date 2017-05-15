@@ -7,7 +7,7 @@ import (
 	"github.com/itsmontoya/pubsubby/utilities"
 )
 
-// u will return a new instance of pubsubby
+// newPubsubby will return a new instance of pubsubby
 // Note: This is private because this library is intended to be generated into other libraries
 func newPubsubby() *pubsubby {
 	var p pubsubby
