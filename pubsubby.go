@@ -59,7 +59,7 @@ func (p *pubsubby) Subscribe(key Key, fn SubFn) {
 // Publish will publish a value to the subscribers for a matching pubsub key
 func (p *pubsubby) Publish(key Key, val Value) {
 	ps := p.create(key)
-	ps.Publish(val)
+	ps.Publish(key, val)
 }
 
 // pubsub is a pubsub item
@@ -80,13 +80,13 @@ func (p *pubsub) Subscribe(fn SubFn) {
 }
 
 // Publish will publish a value to the subscribers
-func (p *pubsub) Publish(val Value) {
+func (p *pubsub) Publish(key Key, val Value) {
 	p.mux.Lock()
 	defer p.mux.Unlock()
 
 	// Iterate through all the subscribers
 	for i, fn := range p.fns {
-		if fn(val) {
+		if fn(key, val) {
 			// Function's end variable returned as true, pop the function from the subscribers list
 			p.pop(i)
 		}
@@ -114,7 +114,7 @@ func (p *pubsub) List() (fis []utilities.FuncInfo) {
 }
 
 // SubFn will take a value and return an "end" boolean
-type SubFn func(val Value) (end bool)
+type SubFn func(key Key, val Value) (end bool)
 
 // Key is the key type
 type Key generic.Type
