@@ -2,7 +2,7 @@
 // Any changes will be lost if this file is regenerated.
 // see https://github.com/cheekybits/genny
 
-package string
+package pubsubby
 
 import (
 	"sync"
@@ -10,23 +10,22 @@ import (
 	"github.com/itsmontoya/pubsubby/utilities"
 )
 
-// u will return a new instance of pubsubby
-// Note: This is private because this library is intended to be generated into other libraries
-func newPubsubby() *pubsubby {
-	var p pubsubby
+// New will return a new instance of Pubsubby
+func New() *Pubsubby {
+	var p Pubsubby
 	p.psm = make(map[string]*pubsub)
 	return &p
 }
 
-// pubsubby manages a set of pubsub's
-type pubsubby struct {
+// Pubsubby manages a set of pubsub's
+type Pubsubby struct {
 	mux sync.RWMutex
 	psm map[string]*pubsub
 }
 
 // get will attempt to get a pubsub for a given key
 // Note: This function is thread-safe, locking does not need to be handled elsewhere
-func (p *pubsubby) get(key string) (ps *pubsub, ok bool) {
+func (p *Pubsubby) get(key string) (ps *pubsub, ok bool) {
 	p.mux.RLock()
 	ps, ok = p.psm[key]
 	p.mux.RUnlock()
@@ -35,7 +34,7 @@ func (p *pubsubby) get(key string) (ps *pubsub, ok bool) {
 
 // create will create a pubsub for a given key if the pubsub does not yet exist
 // Note: This function is thread-safe, locking does not need to be handled elsewhere
-func (p *pubsubby) create(key string) (ps *pubsub) {
+func (p *Pubsubby) create(key string) (ps *pubsub) {
 	var ok bool
 	// Attempt to get the value first, this will allow us to avoid a write-lock if the value exists
 	if ps, ok = p.get(key); ok {
@@ -54,15 +53,17 @@ func (p *pubsubby) create(key string) (ps *pubsub) {
 }
 
 // Subscribe will add a subscriber to the functions list for a matching pubsub key
-func (p *pubsubby) Subscribe(key string, fn SubFn) {
+func (p *Pubsubby) Subscribe(key string, fn SubFn) {
 	ps := p.create(key)
 	ps.Subscribe(fn)
 }
 
 // Publish will publish a value to the subscribers for a matching pubsub key
-func (p *pubsubby) Publish(key string, val string) {
+func (p *Pubsubby) Publish(key string, val []byte) {
 	ps := p.create(key)
-	ps.Publish(val)
+	all := p.create("*")
+	ps.Publish(key, val)
+	all.Publish(key, val)
 }
 
 // pubsub is a pubsub item
@@ -83,13 +84,13 @@ func (p *pubsub) Subscribe(fn SubFn) {
 }
 
 // Publish will publish a value to the subscribers
-func (p *pubsub) Publish(val string) {
+func (p *pubsub) Publish(key string, val []byte) {
 	p.mux.Lock()
 	defer p.mux.Unlock()
 
 	// Iterate through all the subscribers
 	for i, fn := range p.fns {
-		if fn(val) {
+		if fn(key, val) {
 			// Function's end variable returned as true, pop the function from the subscribers list
 			p.pop(i)
 		}
@@ -117,4 +118,4 @@ func (p *pubsub) List() (fis []utilities.FuncInfo) {
 }
 
 // SubFn will take a value and return an "end" boolean
-type SubFn func(val string) (end bool)
+type SubFn func(key string, val []byte) (end bool)
