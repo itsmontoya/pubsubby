@@ -4,7 +4,7 @@ import "testing"
 
 func TestPubSubby(t *testing.T) {
 	var ts testStruct
-	p := newPubsubby()
+	p := New()
 	p.Subscribe("greeting", ts.Sub)
 	p.Subscribe("greeting", ts.Sub)
 	p.Subscribe("greeting", ts.Sub)
